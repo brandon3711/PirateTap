@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 8c97c13d9643ef14995ce673e4529511
+guid: f85f2fbb89408b54c89bc6bccabd62a5
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6971052065168550484
-    second: freepik_assistant_1755598691550_0
+      213: -3153016304884178549
+    second: cielm_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 0
+    filterMode: 1
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -75,7 +75,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: freepik_assistant_1755598691550_0
+      name: cielm_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1568
-        height: 672
+        width: 1024
+        height: 1536
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ca510e8b419d14f90800000000000000
-      internalID: -6971052065168550484
+      spriteID: b812d58406c3e34d0800000000000000
+      internalID: -3153016304884178549
       vertices: []
       indices: 
       edges: []
@@ -151,7 +151,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      freepik_assistant_1755598691550_0: -6971052065168550484
+      cielm_0: -3153016304884178549
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
