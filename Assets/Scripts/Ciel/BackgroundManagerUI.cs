@@ -4,126 +4,135 @@ using System.Collections;
 
 public class BackgroundManagerUI : MonoBehaviour
 {
-    // --------- Références UI principales ---------
     [Header("Refs (UI)")]
-    public Image skyImage;   // drag: BackgroundCanvas/SkyImage (Image)
-    public Image seaImage;   // drag: BackgroundCanvas/SeaImage (Image)
+    public Image skyImage;   // BackgroundCanvas/SkyImage
+    public Image seaImage;   // BackgroundCanvas/SeaImage
 
-    // --------- Sprites de ciel par phase ---------
     [Header("Ciels (ordre: Matin, Jour, Soirée, Nuit)")]
     public Sprite skyMorning;
     public Sprite skyDay;
     public Sprite skyEvening;
     public Sprite skyNight;
 
-    // --------- Couleur de la mer par phase ---------
     [Header("Couleurs mer (même ordre)")]
     public Color seaMorning = new Color(0.65f, 0.85f, 1f, 1f);
     public Color seaDay     = new Color(0.40f, 0.75f, 1f, 1f);
     public Color seaEvening = new Color(0.50f, 0.55f, 0.90f, 1f);
     public Color seaNight   = new Color(0.20f, 0.25f, 0.45f, 1f);
 
-    // --------- Nuages (parallax) ---------
-    [Header("Nuages (parallax UI)")]
-    public CloudParallaxLayerUI layerFar;   // drag: BackgroundCanvas/CloudsParallax/LayerFar
-    public CloudParallaxLayerUI layerNear;  // drag: BackgroundCanvas/CloudsParallax/LayerNear
+    [Header("Nuages (optionnel)")]
+    public RectTransform layerFar;   // CloudsParallax/LayerFar (UI)
+    public RectTransform layerNear;  // CloudsParallax/LayerNear (UI)
+    [Range(0f, 1f)] public float cloudAlpha = 0.70f;  // opacité globale
 
-    // --------- Cycle & fondu ---------
+    [Header("Couleurs nuages (par phase)")]
+    public Color cloudMorning = new Color(1f, 1f, 1f, 1f); // blanc pur matin
+    public Color cloudDay     = new Color(0.95f, 0.95f, 1f, 1f); // léger bleu
+    public Color cloudEvening = new Color(1f, 0.85f, 0.85f, 1f); // rosé
+    public Color cloudNight   = new Color(0.7f, 0.75f, 1f, 1f);  // bleu nuit
+
     [Header("Cycle")]
-    [Tooltip("Tous les X niveaux on passe à la phase suivante")]
-    public int levelsPerPhase = 5;
+    public int levelsPerPhase = 5;       // tous les 5 niveaux on change
+    public float transitionTime = 0.35f; // fondu mer/nuages
 
-    [Tooltip("Durée du fondu de couleur mer (0 = instant)")]
-    public float transitionTime = 0.35f;
-
-    // --------- Phase ---------
     public enum Phase { Morning = 0, Day = 1, Evening = 2, Night = 3 }
-
-    [HideInInspector] public Phase currentPhase = Phase.Morning;
 
     Coroutine transitionCR;
 
     void Start()
     {
-        // Au lancement, applique une phase par défaut (matin)
-        ApplyForLevel(0);
+        ApplyForLevel(0); // par défaut : matin
     }
 
-    /// <summary>
-    /// Applique la phase en fonction de l'index de niveau (0,1,2,3…).
-    /// </summary>
     public void ApplyForLevel(int levelIndex)
     {
         int phaseIndex = Mathf.FloorToInt(levelIndex / Mathf.Max(1, levelsPerPhase)) % 4;
         SetPhase((Phase)phaseIndex);
     }
 
-    /// <summary>
-    /// Force l'application d'une phase (utile pour tests ou changement direct).
-    /// </summary>
     public void SetPhase(Phase phase)
     {
-        currentPhase = phase;
-
-        // Choix des cibles (ciel + couleur mer)
         Sprite targetSky;
         Color  targetSea;
+        Color  targetCloud;
+
         switch (phase)
         {
             default:
-            case Phase.Morning: targetSky = skyMorning; targetSea = seaMorning; break;
-            case Phase.Day:     targetSky = skyDay;     targetSea = seaDay;     break;
-            case Phase.Evening: targetSky = skyEvening; targetSea = seaEvening; break;
-            case Phase.Night:   targetSky = skyNight;   targetSea = seaNight;   break;
+            case Phase.Morning:
+                targetSky = skyMorning; targetSea = seaMorning; targetCloud = cloudMorning; break;
+            case Phase.Day:
+                targetSky = skyDay;     targetSea = seaDay;     targetCloud = cloudDay;     break;
+            case Phase.Evening:
+                targetSky = skyEvening; targetSea = seaEvening; targetCloud = cloudEvening; break;
+            case Phase.Night:
+                targetSky = skyNight;   targetSea = seaNight;   targetCloud = cloudNight;   break;
         }
 
-        // Lance/relance le fondu mer + swap sprite ciel
         if (transitionCR != null) StopCoroutine(transitionCR);
-        transitionCR = StartCoroutine(TransitionTo(targetSky, targetSea, transitionTime));
-
-        // Informe les couches de nuages pour ajuster leur teinte
-        if (layerFar)  layerFar.SetPhase(phase);
-        if (layerNear) layerNear.SetPhase(phase);
+        transitionCR = StartCoroutine(TransitionTo(targetSky, targetSea, targetCloud, transitionTime));
     }
 
-    /// <summary>
-    /// Petit fondu de la mer. Le sprite du ciel est changé au début.
-    /// </summary>
-    IEnumerator TransitionTo(Sprite sky, Color sea, float t)
+    IEnumerator TransitionTo(Sprite sky, Color sea, Color cloud, float t)
     {
         if (skyImage) skyImage.sprite = sky;
+
+        Color seaStart   = seaImage ? seaImage.color : Color.white;
+        Color cloudStart = GetCurrentCloudColor();
+        Color cloudEnd   = new Color(cloud.r, cloud.g, cloud.b, cloudAlpha);
 
         if (t <= 0f)
         {
             if (seaImage) seaImage.color = sea;
+            ApplyCloudTint(cloudEnd);
             yield break;
         }
 
         float elapsed = 0f;
-        Color start = seaImage ? seaImage.color : Color.white;
-
         while (elapsed < t)
         {
             elapsed += Time.deltaTime;
             float k = Mathf.Clamp01(elapsed / t);
-            if (seaImage) seaImage.color = Color.Lerp(start, sea, k);
+
+            if (seaImage) seaImage.color = Color.Lerp(seaStart, sea, k);
+            ApplyCloudTint(Color.Lerp(cloudStart, cloudEnd, k));
+
             yield return null;
         }
 
         if (seaImage) seaImage.color = sea;
+        ApplyCloudTint(cloudEnd);
     }
 
-    // ---------- Helpers de test (facultatifs) ----------
-    // Appelle ces méthodes depuis un LevelTester ou un bouton pour vérifier visuellement.
-    public void NextPhaseForTest()
+    // Récupère la couleur actuelle d’un nuage (sert pour le fondu)
+    Color GetCurrentCloudColor()
     {
-        int i = ((int)currentPhase + 1) % 4;
-        SetPhase((Phase)i);
+        if (layerFar)
+        {
+            var img = layerFar.GetComponentInChildren<Image>();
+            if (img) return img.color;
+        }
+        if (layerNear)
+        {
+            var img = layerNear.GetComponentInChildren<Image>();
+            if (img) return img.color;
+        }
+        return Color.white;
     }
 
-    public void PrevPhaseForTest()
+    void ApplyCloudTint(Color tint)
     {
-        int i = ((int)currentPhase + 3) % 4;
-        SetPhase((Phase)i);
+        if (layerFar)  TintAllImagesUnder(layerFar,  tint);
+        if (layerNear) TintAllImagesUnder(layerNear, tint);
+    }
+
+    static void TintAllImagesUnder(Transform root, Color c)
+    {
+        if (!root) return;
+        var imgs = root.GetComponentsInChildren<Image>(true);
+        for (int i = 0; i < imgs.Length; i++)
+        {
+            imgs[i].color = c;
+        }
     }
 }

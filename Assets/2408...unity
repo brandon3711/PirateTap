@@ -119,6 +119,42 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &195987318
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 195987319}
+  m_Layer: 5
+  m_Name: BoatLayer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &195987319
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 195987318}
+  m_LocalRotation: {x: 0, y: 0, z: -0.012963148, w: 0.999916}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1734407043}
+  m_Father: {fileID: 1110137659}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 5.4375, y: -192.04865}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &256460995
 GameObject:
   m_ObjectHideFlags: 0
@@ -150,8 +186,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   background: {fileID: 1110137660}
   cloudLayers:
-  - {fileID: 681761528}
-  - {fileID: 1602042213}
+  - {fileID: 0}
+  - {fileID: 0}
   nextKey: 110
   prevKey: 98
   fakeLevel: 0
@@ -824,19 +860,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoCollectChildren: 1
-  clouds:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  speed: 500
-  spacing: 500
-  wrapPadding: 500
-  bobAmp: 50
-  bobSpeed: 50
+  clouds: []
+  speed: 250
+  spacing: 1000
+  wrapPadding: 100
+  bobAmp: 0
+  bobSpeed: 0
   tintMorning: {r: 1, g: 1, b: 1, a: 1}
   tintDay: {r: 1, g: 1, b: 1, a: 1}
-  tintEvening: {r: 1, g: 0.9, b: 0.85, a: 1}
-  tintNight: {r: 0.75, g: 0.82, b: 1, a: 1}
+  tintEvening: {r: 1, g: 1, b: 1, a: 1}
+  tintNight: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &790983684
 GameObject:
   m_ObjectHideFlags: 0
@@ -1300,8 +1333,9 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 982100690}
-  - {fileID: 489903413}
   - {fileID: 1204565059}
+  - {fileID: 195987319}
+  - {fileID: 489903413}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1331,10 +1365,15 @@ MonoBehaviour:
   seaDay: {r: 0.4, g: 0.75, b: 1, a: 1}
   seaEvening: {r: 0.5, g: 0.55, b: 0.9, a: 1}
   seaNight: {r: 0.2, g: 0.25, b: 0.45, a: 1}
+  layerFar: {fileID: 1602042212}
+  layerNear: {fileID: 681761527}
+  cloudAlpha: 0.7
+  cloudMorning: {r: 1, g: 1, b: 1, a: 1}
+  cloudDay: {r: 0.95, g: 0.95, b: 1, a: 1}
+  cloudEvening: {r: 1, g: 0.85, b: 0.85, a: 1}
+  cloudNight: {r: 0.7, g: 0.75, b: 1, a: 1}
   levelsPerPhase: 5
   transitionTime: 0.35
-  layerFar: {fileID: 1602042213}
-  layerNear: {fileID: 681761528}
 --- !u!1 &1149163716
 GameObject:
   m_ObjectHideFlags: 0
@@ -1715,19 +1754,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoCollectChildren: 1
-  clouds:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  speed: 500
-  spacing: 600
-  wrapPadding: 500
-  bobAmp: 50
-  bobSpeed: 50
-  tintMorning: {r: 1, g: 0, b: 1, a: 1}
+  clouds: []
+  speed: 45
+  spacing: 700
+  wrapPadding: 250
+  bobAmp: 0
+  bobSpeed: 0
+  tintMorning: {r: 1, g: 1, b: 1, a: 1}
   tintDay: {r: 1, g: 1, b: 1, a: 1}
-  tintEvening: {r: 1, g: 0.9, b: 0.85, a: 1}
-  tintNight: {r: 0.75, g: 0.82, b: 1, a: 1}
+  tintEvening: {r: 1, g: 1, b: 1, a: 1}
+  tintNight: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1626665601
 GameObject:
   m_ObjectHideFlags: 0
@@ -2188,7 +2224,7 @@ MonoBehaviour:
   - {fileID: 1741801489}
   fullHeart: {fileID: 4606908045521496030, guid: b7a1146751715224eb4c4f59080b121f, type: 3}
   emptyHeart: {fileID: -4195582761621981391, guid: b7a1146751715224eb4c4f59080b121f, type: 3}
-  currentLives: 1
+  currentLives: 2
 --- !u!114 &1705893444
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2223,6 +2259,108 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1705893441}
   m_CullTransparentMesh: 1
+--- !u!1 &1734407042
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1734407043}
+  - component: {fileID: 1734407045}
+  - component: {fileID: 1734407044}
+  - component: {fileID: 1734407046}
+  m_Layer: 5
+  m_Name: Boat
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1734407043
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1734407042}
+  m_LocalRotation: {x: 0, y: 0, z: -0.018848922, w: 0.9998223}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 195987319}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 4931, y: 18019}
+  m_SizeDelta: {x: 872.7274, y: 604.4989}
+  m_Pivot: {x: 5.056, y: 30.316559}
+--- !u!114 &1734407044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1734407042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 2597325316641374877, guid: 3ed87e7bfb492ec44a2228e9b4115129, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1734407045
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1734407042}
+  m_CullTransparentMesh: 1
+--- !u!114 &1734407046
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1734407042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7009c40d91687d342a23e7becc10482b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  seaImageRect: {fileID: 489903413}
+  boatRect: {fileID: 195987319}
+  boatImage: {fileID: 0}
+  backgroundManager: {fileID: 1110137657}
+  waterlineOffset: 4
+  baseXOffset: 0
+  bobAmplitude: 3
+  bobSpeed: 0.2
+  rollAmplitude: 1.5
+  rollSpeed: 0.2
+  driftSpeed: 4
+  driftRange: 20
+  recolorStrength: 0.35
+  baseBoatColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1741801487
 GameObject:
   m_ObjectHideFlags: 0
@@ -2280,7 +2418,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 4606908045521496030, guid: b7a1146751715224eb4c4f59080b121f, type: 3}
+  m_Sprite: {fileID: -4195582761621981391, guid: b7a1146751715224eb4c4f59080b121f, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -2307,7 +2445,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1776090837}
-  - component: {fileID: 1776090836}
+  - component: {fileID: 1776090838}
   m_Layer: 0
   m_Name: LevelTester
   m_TagString: Untagged
@@ -2315,20 +2453,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1776090836
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1776090835}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 49fda84277673404da24550a310058b4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  backgroundManager: {fileID: 1110137660}
-  key: 32
 --- !u!4 &1776090837
 Transform:
   m_ObjectHideFlags: 0
@@ -2344,6 +2468,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1776090838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1776090835}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49fda84277673404da24550a310058b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  background: {fileID: 1110137660}
+  progressUI: {fileID: 1970201840}
+  livesUI: {fileID: 1705893443}
+  nextLevelKey: 32
+  fillKey: 97
+  loseLifeKey: 113
+  resetKey: 114
+  fakeLevel: 0
+  fillRatePerSecond: 0.35
+  startLives: 3
 --- !u!1 &1777790841
 GameObject:
   m_ObjectHideFlags: 0

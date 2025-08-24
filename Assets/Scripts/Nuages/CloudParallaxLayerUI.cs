@@ -1,102 +1,104 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[DisallowMultipleComponent]
 public class CloudParallaxLayerUI : MonoBehaviour
 {
-    [Header("Nuages de cette couche (objets de la SCÈNE)")]
+    public bool autoCollectChildren = true;
     public RectTransform[] clouds;
 
     [Header("Défilement & boucle")]
-    [Tooltip("Pixels UI/seconde. Positif = vers la gauche.")]
-    public float speed = 30f;
-    [Tooltip("Écart X moyen entre nuages quand on les redistribue.")]
-    public float spacing = 350f;
-    [Tooltip("Marge hors écran avant de réapparaître à droite.")]
-    public float wrapPadding = 120f;
+    public float speed = 100f;        // px/s gauche
+    public float spacing = 700f;      // distance entre nuages
+    public float wrapPadding = 250f;  // marge de wrap
 
     [Header("Houle (optionnel)")]
-    public float bobAmp = 6f;    // amplitude verticale (px)
-    public float bobSpeed = 0.5f;// vitesse houle
+    public float bobAmp = 0f;
+    public float bobSpeed = 0f;
 
-    [Header("Teinte par phase")]
+    [Header("Teinte par phase (reçues du BG Manager)")]
     public Color tintMorning = Color.white;
     public Color tintDay     = Color.white;
-    public Color tintEvening = new Color(1f, 0.9f, 0.85f, 1f);
-    public Color tintNight   = new Color(0.75f, 0.82f, 1f, 1f);
+    public Color tintEvening = Color.white;
+    public Color tintNight   = Color.white;
 
     RectTransform canvasRT;
-    Vector2[] basePos;
-    float[] phaseOff;
+    Vector2[] startPos;
+    float[] phaseOffset;
 
     void Awake()
     {
         var canvas = GetComponentInParent<Canvas>();
         canvasRT = canvas ? canvas.GetComponent<RectTransform>() : null;
 
-        if (clouds == null) clouds = new RectTransform[0];
-        basePos  = new Vector2[clouds.Length];
-        phaseOff = new float[clouds.Length];
+        if (autoCollectChildren || clouds == null || clouds.Length == 0)
+        {
+            var imgs = GetComponentsInChildren<Image>(true);
+            clouds = new RectTransform[imgs.Length];
+            for (int i = 0; i < imgs.Length; i++)
+                clouds[i] = imgs[i].GetComponent<RectTransform>();
+        }
 
+        if (clouds == null || clouds.Length == 0)
+        {
+            Debug.LogWarning($"[Parallax] Aucun nuage sur {name}.", this);
+            return;
+        }
+
+        startPos = new Vector2[clouds.Length];
+        phaseOffset = new float[clouds.Length];
         for (int i = 0; i < clouds.Length; i++)
         {
             if (!clouds[i]) continue;
-            basePos[i]  = clouds[i].anchoredPosition;
-            phaseOff[i] = Random.value * 10f;
+            startPos[i] = clouds[i].anchoredPosition;
+            phaseOffset[i] = Random.value * 10f;
         }
 
-        DistributeHorizontally();
-    }
-
-    void DistributeHorizontally()
-    {
-        if (!canvasRT || clouds.Length == 0) return;
-        float w = canvasRT.rect.width;
-        float x = -w * 0.5f;
-        for (int i = 0; i < clouds.Length; i++)
+        if (canvasRT)
         {
-            if (!clouds[i]) continue;
-            var p = clouds[i].anchoredPosition;
-            clouds[i].anchoredPosition = new Vector2(x, p.y);
-            x += spacing;
+            float w = canvasRT.rect.width;
+            float x = -w * 0.5f;
+            for (int i = 0; i < clouds.Length; i++)
+                if (clouds[i]) clouds[i].anchoredPosition = new Vector2(x + i * spacing, clouds[i].anchoredPosition.y);
         }
+
+        Debug.Log($"[Parallax] {name} prêt ({clouds.Length} nuages).", this);
     }
 
     void Update()
     {
-        if (!canvasRT || clouds.Length == 0) return;
+        if (clouds == null || canvasRT == null) return;
 
-        float w = canvasRT.rect.width;
-        float left  = -w * 0.5f - wrapPadding;
-        float right =  w * 0.5f + wrapPadding;
+        float width = canvasRT.rect.width;
+        float leftLimit = -width * 0.5f - wrapPadding;
+
+        // Trouver le plus à droite pour respawn
+        float rightMost = float.MinValue;
+        for (int i = 0; i < clouds.Length; i++)
+            if (clouds[i]) rightMost = Mathf.Max(rightMost, clouds[i].anchoredPosition.x);
+        float rightSpawn = rightMost + spacing;
+
+        float dx = speed * Time.deltaTime;
 
         for (int i = 0; i < clouds.Length; i++)
         {
             var rt = clouds[i];
             if (!rt) continue;
 
-            // défilement
-            var pos = rt.anchoredPosition;
-            pos.x -= speed * Time.deltaTime;
+            Vector2 pos = rt.anchoredPosition;
+            pos.x -= dx;
 
-            // houle
-            float bob = Mathf.Sin((Time.time + phaseOff[i]) * bobSpeed) * bobAmp;
-            pos.y = basePos[i].y + bob;
-
-            // wrap : si trop à gauche -> réapparaît après le nuage le plus à droite
-            if (pos.x < left)
+            if (bobAmp > 0f && bobSpeed > 0f)
             {
-                float maxX = pos.x;
-                for (int j = 0; j < clouds.Length; j++)
-                    if (j != i && clouds[j])
-                        maxX = Mathf.Max(maxX, clouds[j].anchoredPosition.x);
-                pos.x = Mathf.Max(maxX, right) + spacing * 0.5f;
+                float bob = Mathf.Sin((Time.time + phaseOffset[i]) * bobSpeed) * bobAmp;
+                pos.y = startPos[i].y + bob;
             }
 
+            if (pos.x < leftLimit) pos.x = rightSpawn;
             rt.anchoredPosition = pos;
         }
     }
 
-    // Appelée par le BackgroundManagerUI
     public void SetPhase(BackgroundManagerUI.Phase phase)
     {
         Color tint = tintDay;
@@ -108,14 +110,12 @@ public class CloudParallaxLayerUI : MonoBehaviour
             case BackgroundManagerUI.Phase.Night:   tint = tintNight;   break;
         }
 
+        if (clouds == null) return;
         for (int i = 0; i < clouds.Length; i++)
         {
-            var rt = clouds[i];
-            if (!rt) continue;
-            var img = rt.GetComponent<Image>();
+            var img = clouds[i] ? clouds[i].GetComponent<Image>() : null;
             if (!img) continue;
-
-            var c = img.color; // on garde l’alpha existant
+            var c = img.color;
             img.color = new Color(tint.r, tint.g, tint.b, c.a);
         }
     }
