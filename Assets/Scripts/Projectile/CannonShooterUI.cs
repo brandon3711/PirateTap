@@ -3,57 +3,46 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 
 /// <summary>
-/// Orchestration des tirs: cadence non linéaire, choix TNT, calcul de l'arc,
-/// spawn du projectile + du pré-shot synchronisé.
+/// Orchestre les tirs : cadence non linéaire, TNT aléatoire,
+/// parabole en UI (anchoredPosition), spawn du projectile + pré-shot.
 /// </summary>
 public class CannonShooterUI : MonoBehaviour
 {
     [Header("Refs")]
-    public RectTransform muzzleAnchor;      // BoatMuzzleRef.muzzleAnchor (RectTransform)
-    public RectTransform projectileLayer;   // UI layer pour projectiles
-    public RectTransform frontFXLayer;      // UI layer pour pré-shot
-    public LivesUI livesUI;                 // optionnel: ton script existant (pour LoseLife)
-    public ScoreManager scoreManager;       // optionnel: ton script de score (AddScore)
+    public RectTransform muzzleAnchor;      // Boat/MuzzleAnchor
+    public RectTransform projectileLayer;   // doit "stretch" sur tout l'écran
+    public RectTransform frontFXLayer;      // idem
+    public LivesUI livesUI;                 // optionnel
+    public ScoreManager scoreManager;       // optionnel
 
     [Header("Prefabs (UI)")]
-    public CannonballUI cannonballPrefab;   // prefab avec Image + script CannonballUI
-    public PrechotMarkerUI prechotPrefab;   // prefab anneau cliquable
+    public CannonballUI cannonballPrefab;
+    public PrechotMarkerUI prechotPrefab;
 
     [Header("Sprites")]
-    public Sprite cannonballSprite;         // sprite boulet
-    public Sprite tntSprite;                // sprite TNT (piège)
+    public Sprite cannonballSprite;
+    public Sprite tntSprite;
 
     [Header("Cadence")]
-    [Tooltip("Intervalle moyen entre tirs (s).")]
     public float meanInterval = 1.6f;
-    [Tooltip("Variation aléatoire autour de l'intervalle moyen (s).")]
     public float intervalJitter = 0.9f;
-    [Tooltip("Chance d'entrer en 'burst' (salve).")]
     [Range(0f, 1f)] public float burstChance = 0.25f;
-    [Tooltip("Nombre de tirs dans une salve.")]
     public Vector2Int burstCountRange = new Vector2Int(2, 4);
-    [Tooltip("Intervalle entre tirs d'une salve (s).")]
     public Vector2 burstGapRange = new Vector2(0.25f, 0.55f);
 
     [Header("Physique (UI)")]
-    [Tooltip("Gravité (pixels/s²), négative en Y (Canvas Overlay).")]
+    [Tooltip("Gravité (px/s²). Y vers le bas = négatif.")]
     public float gravityY = -1600f;
-
-    [Tooltip("Temps de vol cible (s).")]
     public Vector2 flightTimeRange = new Vector2(0.9f, 1.6f);
 
-    [Header("Contraintes d’impact (écran)")]
-    [Tooltip("Bande verticale (en Y écran) autorisée pour l’impact (évite tout en haut/bas).")]
+    [Header("Contraintes d'impact (écran)")]
     public Vector2 impactYRange = new Vector2(450f, 1350f);
-    [Tooltip("Marge latérale (évite les bords de l’écran).")]
     public float impactXMargin = 90f;
 
     [Header("Gameplay points")]
     public int pointsPerfect = 100;
     public int pointsLateEarly = 50;
-    [Tooltip("Fenêtre (sec) autour de l'impact pour PERFECT.")]
     public float perfectWindow = 0.08f;
-    [Tooltip("Fenêtre autour de l'impact où on accorde 'moitié des points'.")]
     public float halfWindow = 0.25f;
 
     [Header("TNT")]
@@ -61,12 +50,11 @@ public class CannonShooterUI : MonoBehaviour
 
     // interne
     private float _nextShotTime;
-    private Queue<float> _burstSchedule = new Queue<float>();
+    private readonly Queue<float> _burstSchedule = new Queue<float>();
     private Vector2 _canvasSize;
 
     void Start()
     {
-        // calc taille canvas (en pixels)
         var canvas = GetComponentInParent<Canvas>();
         if (canvas != null && canvas.pixelRect.width > 0)
             _canvasSize = new Vector2(canvas.pixelRect.width, canvas.pixelRect.height);
@@ -92,7 +80,6 @@ public class CannonShooterUI : MonoBehaviour
 
         if (now >= _nextShotTime)
         {
-            // parfois: burst
             if (Random.value < burstChance)
             {
                 int n = Random.Range(burstCountRange.x, burstCountRange.y + 1);
@@ -108,7 +95,6 @@ public class CannonShooterUI : MonoBehaviour
             {
                 FireOne();
             }
-
             ScheduleNext();
         }
     }
@@ -119,48 +105,64 @@ public class CannonShooterUI : MonoBehaviour
         _nextShotTime = Time.time + Mathf.Max(0.15f, meanInterval + jitter);
     }
 
+    // --- Tir unique ---
     void FireOne()
     {
-        if (muzzleAnchor == null || cannonballPrefab == null || prechotPrefab == null) return;
+        if (muzzleAnchor == null || projectileLayer == null || frontFXLayer == null ||
+            cannonballPrefab == null || prechotPrefab == null)
+            return;
 
-        // 1) Choisir un point d’impact “raisonnable”
-        Vector2 impact = new Vector2(
+        // 1) Point d'impact en pixels écran (on évite bords/haut/bas)
+        Vector2 impactScreen = new Vector2(
             Random.Range(impactXMargin, _canvasSize.x - impactXMargin),
             Random.Range(impactYRange.x, impactYRange.y)
         );
 
-        // 2) Temps de vol
+        // 2) Prépare la caméra correcte pour les conversions (Overlay vs ScreenSpace-Camera)
+        var parentCanvas = projectileLayer.GetComponentInParent<Canvas>();
+        Camera cam = null;
+        if (parentCanvas != null && parentCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            cam = parentCanvas.worldCamera; // obligatoire en Screen Space - Camera
+
+        // 3) Convertir départ + impact en coordonnées **anchored** du projectileLayer
+        Vector2 startScreen = RectTransformUtility.WorldToScreenPoint(cam, muzzleAnchor.position);
+
+        RectTransform layer = projectileLayer;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(layer, startScreen, cam, out Vector2 startA);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(layer, impactScreen, cam, out Vector2 impactA);
+
+        // 4) Physique en UI (anchored)
         float tFlight = Random.Range(flightTimeRange.x, flightTimeRange.y);
+        Vector2 gA = new Vector2(0f, gravityY);
 
-        // 3) Calcul de la vitesse initiale pour toucher impact en t = tFlight
-        Vector2 start = muzzleAnchor.position;
-        Vector2 g = new Vector2(0f, gravityY);
-        // v0 = (p - s - 0.5 g t^2)/t
-        Vector2 v0 = (impact - start - 0.5f * g * (tFlight * tFlight)) / tFlight;
+        // v0 = (p - s - 0.5 g t^2) / t
+        Vector2 v0A = (impactA - startA - 0.5f * gA * (tFlight * tFlight)) / tFlight;
 
-        // 4) Type (boulet ou TNT)
+        // 5) Type
         bool isTNT = (Random.value < tntProbability);
 
-        // 5) Spawn projectile
+        // 6) Spawn projectile
         var proj = Instantiate(cannonballPrefab, projectileLayer);
-        proj.Setup(start, v0, g, tFlight, isTNT ? tntSprite : cannonballSprite);
+        proj.Setup(startA, v0A, gA, tFlight, isTNT ? tntSprite : cannonballSprite);
 
-        // 6) Pré‑shot (anneau cliquable à la position d’impact)
+        // 7) Pré-shot
         var marker = Instantiate(prechotPrefab, frontFXLayer);
-        marker.Setup(impact, tFlight, isTNT, OnMarkerClicked, OnMarkerExpired);
+        if (marker.rt == null) marker.rt = marker.GetComponent<RectTransform>();
+        marker.rt.anchoredPosition = impactA;
+        marker.Setup(impactA, tFlight, isTNT, OnMarkerClicked, OnMarkerExpired);
 
-        // 7) Liaison projectile ↔ marker (pour petits effets sync si besoin)
+        // 8) Lien FX
         proj.BindMarker(marker);
     }
 
-    // Callback: joueur a cliqué
+    // --- Callbacks ---
     private void OnMarkerClicked(PrechotMarkerUI marker, float dtFromImpact, bool isTNT)
     {
         if (isTNT)
         {
-            // TNT cliquée → -1 vie
             if (livesUI != null) livesUI.LoseLife(1);
             marker.PlayBadFx();
+            marker.Consume();
             return;
         }
 
@@ -177,22 +179,15 @@ public class CannonShooterUI : MonoBehaviour
         }
         else
         {
-            // en dehors fenêtre → rien (mais le marker va expirer et compter comme raté ? Non: on compte raté seulement si pas cliqué avant expiry)
             marker.PlayTooEarlyLateFx();
         }
 
-        // Dans tous les cas, après clic (bon ou pas), on retire le marker pour ce tir
         marker.Consume();
     }
 
-    // Callback: le marker a expiré sans clic (impact passé)
     private void OnMarkerExpired(PrechotMarkerUI marker, bool wasTNT)
     {
-        if (!wasTNT)
-        {
-            // Boulet non cliqué → -1 vie
-            if (livesUI != null) livesUI.LoseLife(1);
-        }
-        // TNT ignorée → aucun effet
+        if (!wasTNT && livesUI != null)
+            livesUI.LoseLife(1);
     }
 }
