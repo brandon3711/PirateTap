@@ -2,16 +2,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-/// <summary>
 /// Orchestre les tirs : cadence non linéaire, TNT aléatoire,
-/// parabole en UI (anchoredPosition), spawn du projectile + pré-shot.
-/// </summary>
+/// parabole en UI (anchoredPosition), spawn projectile + pré-shot.
 public class CannonShooterUI : MonoBehaviour
 {
     [Header("Refs")]
     public RectTransform muzzleAnchor;      // Boat/MuzzleAnchor
-    public RectTransform projectileLayer;   // doit "stretch" sur tout l'écran
-    public RectTransform frontFXLayer;      // idem
+    public RectTransform projectileLayer;   // stretch sur tout l'écran
+    public RectTransform frontFXLayer;      // stretch sur tout l'écran
     public LivesUI livesUI;                 // optionnel
     public ScoreManager scoreManager;       // optionnel
 
@@ -112,44 +110,47 @@ public class CannonShooterUI : MonoBehaviour
             cannonballPrefab == null || prechotPrefab == null)
             return;
 
-        // 1) Point d'impact en pixels écran (on évite bords/haut/bas)
+        // 1) Impact en pixels écran (bande autorisée)
         Vector2 impactScreen = new Vector2(
             Random.Range(impactXMargin, _canvasSize.x - impactXMargin),
             Random.Range(impactYRange.x, impactYRange.y)
         );
 
-        // 2) Prépare la caméra correcte pour les conversions (Overlay vs ScreenSpace-Camera)
+        // 2) Caméra correcte selon le Canvas
         var parentCanvas = projectileLayer.GetComponentInParent<Canvas>();
         Camera cam = null;
         if (parentCanvas != null && parentCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
-            cam = parentCanvas.worldCamera; // obligatoire en Screen Space - Camera
+            cam = parentCanvas.worldCamera; // Screen Space - Camera
 
-        // 3) Convertir départ + impact en coordonnées **anchored** du projectileLayer
+        // 3) Convertir départ + impact en anchored du projectileLayer
         Vector2 startScreen = RectTransformUtility.WorldToScreenPoint(cam, muzzleAnchor.position);
 
-        RectTransform layer = projectileLayer;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(layer, startScreen, cam, out Vector2 startA);
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(layer, impactScreen, cam, out Vector2 impactA);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            projectileLayer, startScreen, cam, out Vector2 startA);
+
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            projectileLayer, impactScreen, cam, out Vector2 impactA_forProjectiles);
 
         // 4) Physique en UI (anchored)
         float tFlight = Random.Range(flightTimeRange.x, flightTimeRange.y);
         Vector2 gA = new Vector2(0f, gravityY);
-
-        // v0 = (p - s - 0.5 g t^2) / t
-        Vector2 v0A = (impactA - startA - 0.5f * gA * (tFlight * tFlight)) / tFlight;
+        Vector2 v0A = (impactA_forProjectiles - startA - 0.5f * gA * (tFlight * tFlight)) / tFlight;
 
         // 5) Type
         bool isTNT = (Random.value < tntProbability);
 
-        // 6) Spawn projectile
+        // 6) Projectile sous projectileLayer
         var proj = Instantiate(cannonballPrefab, projectileLayer);
         proj.Setup(startA, v0A, gA, tFlight, isTNT ? tntSprite : cannonballSprite);
 
-        // 7) Pré-shot
+        // 7) Pré-shot sous frontFXLayer (reconverti pour CE parent)
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            frontFXLayer, impactScreen, cam, out Vector2 impactA_forFX);
+
         var marker = Instantiate(prechotPrefab, frontFXLayer);
         if (marker.rt == null) marker.rt = marker.GetComponent<RectTransform>();
-        marker.rt.anchoredPosition = impactA;
-        marker.Setup(impactA, tFlight, isTNT, OnMarkerClicked, OnMarkerExpired);
+        marker.rt.anchoredPosition = impactA_forFX;
+        marker.Setup(impactA_forFX, tFlight, isTNT, OnMarkerClicked, OnMarkerExpired);
 
         // 8) Lien FX
         proj.BindMarker(marker);
@@ -189,5 +190,21 @@ public class CannonShooterUI : MonoBehaviour
     {
         if (!wasTNT && livesUI != null)
             livesUI.LoseLife(1);
+    }
+
+    // (facultatif) utilitaire de debug de point
+    private void SpawnDebugDot(RectTransform parent, Vector2 anchoredPos, Color col, string name)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        var rt = go.GetComponent<RectTransform>();
+        rt.SetParent(parent, false);
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = anchoredPos;
+        rt.sizeDelta = new Vector2(12, 12);
+        var img = go.GetComponent<Image>();
+        img.color = col;
+        img.raycastTarget = false;
+        Destroy(go, 1.5f);
     }
 }
